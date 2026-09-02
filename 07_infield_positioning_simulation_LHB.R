@@ -81,14 +81,14 @@ infielders <- c("1B", "2B", "3B", "SS")
 num_class <- 7
 
 for (zonenum in c(1:9)) {
-  
+  #zonenum <- 1
   final_file <- here("data", paste0("res_L_zone", zonenum, ".rds"))
   
   res_L <- list()
   zonedata <- test_L2 |> filter(New_zone == zonenum)
   
   for (i in seq_along(grid_chunks)) {
-    
+    #i <- 1
     g <- grid_chunks[[i]]
     dat_exp <- tidyr::crossing(zonedata, g)
     
@@ -126,7 +126,7 @@ for (zonenum in c(1:9)) {
       ) |>
       select(-min_if_dist, -nearest_angle)
     
-    x_dat_exp <- model.matrix(
+    x_dat_exp_mat <- model.matrix(
       ~ p_throwsLHP + p_throwsRHP + launch_speed + launch_angle + is_foul_tag + is_bounced_bip +
         p1B_dist + p1B_angle + p2B_dist + p2B_angle + p3B_dist + p3B_angle + pSS_dist + pSS_angle +
         dteamATL + dteamAZ + dteamBAL + dteamBOS + dteamCHC + dteamCIN + dteamCLE + dteamCOL + dteamCWS +
@@ -136,11 +136,16 @@ for (zonenum in c(1:9)) {
         home_teamCWS + home_teamDET + home_teamHOU + home_teamKC + home_teamLAA + home_teamLAD + home_teamMIA + home_teamMIL +
         home_teamMIN + home_teamNYM + home_teamNYY + home_teamOAK + home_teamPHI + home_teamPIT + home_teamSD + home_teamSEA +
         home_teamSF + home_teamSTL + home_teamTB + home_teamTEX + home_teamTOR + home_teamWSH - 1,
-      data = dat_exp
+      data = dat_exp,na.action = na.pass
     )
-    x_dat_exp <- xgb.DMatrix(data = x_dat_exp)
+    x_dat_exp <- xgb.DMatrix(data = x_dat_exp_mat, missing = NA)
     
-    pred_respon_L <- matrix(predict(model_L_respon, newdata = x_dat_exp), ncol = num_class, byrow = TRUE)
+    pred_res <- predict(model_L_respon, newdata = x_dat_exp)
+    if (is.matrix(pred_res)) {
+      pred_respon_L <- pred_res
+    } else {
+      pred_respon_L <- matrix(pred_res, ncol = num_class, byrow = TRUE)
+    }
     colnames(pred_respon_L) <- levels(test_L$fielderposition)
     
     probs_if <- as.matrix(pred_respon_L[, infielders])

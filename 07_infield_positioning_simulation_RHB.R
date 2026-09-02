@@ -7,6 +7,7 @@ load(here("data", "Outcome prediction model.RData"))
 load(here("data", "responsibility model.RData"))
 load(here("data", "l_2025_league.RData"))
 
+
 IF_base_wide <- l_2025_league |>
   filter(position %in% c("3B", "SS", "2B", "1B")) |>
   group_by(position, stand) |>
@@ -125,7 +126,7 @@ for (zonenum in c(1:9)) {
       ) |>
       select(-min_if_dist, -nearest_angle)
     
-    x_dat_exp <- model.matrix(
+    x_dat_exp_mat <- model.matrix(
       ~ p_throwsLHP + p_throwsRHP + launch_speed + launch_angle + is_foul_tag + is_bounced_bip +
         p1B_dist + p1B_angle + p2B_dist + p2B_angle + p3B_dist + p3B_angle + pSS_dist + pSS_angle +
         dteamATL + dteamAZ + dteamBAL + dteamBOS + dteamCHC + dteamCIN + dteamCLE + dteamCOL + dteamCWS +
@@ -135,11 +136,17 @@ for (zonenum in c(1:9)) {
         home_teamCWS + home_teamDET + home_teamHOU + home_teamKC + home_teamLAA + home_teamLAD + home_teamMIA + home_teamMIL +
         home_teamMIN + home_teamNYM + home_teamNYY + home_teamOAK + home_teamPHI + home_teamPIT + home_teamSD + home_teamSEA +
         home_teamSF + home_teamSTL + home_teamTB + home_teamTEX + home_teamTOR + home_teamWSH - 1,
-      data = dat_exp
+      data = dat_exp,
+      na.action = na.pass
     )
-    x_dat_exp <- xgb.DMatrix(data = x_dat_exp)
+    x_dat_exp <- xgb.DMatrix(data = x_dat_exp_mat, missing = NA)
     
-    pred_respon_R <- matrix(predict(model_R_respon, newdata = x_dat_exp), ncol = num_class, byrow = TRUE)
+    pred_res <- predict(model_R_respon, newdata = x_dat_exp)
+    if (is.matrix(pred_res)) {
+      pred_respon_R <- pred_res
+    } else {
+      pred_respon_R <- matrix(pred_res, ncol = num_class, byrow = TRUE)
+    }
     colnames(pred_respon_R) <- levels(test_R$fielderposition)
     
     probs_if <- as.matrix(pred_respon_R[, infielders])
