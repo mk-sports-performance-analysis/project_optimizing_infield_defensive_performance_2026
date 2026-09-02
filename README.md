@@ -9,13 +9,13 @@ The pipeline is organized into the following stages:
 1. Data extraction & preprocessing – clean data, convert units, and define a 9-zone grid.
 2. Descriptive analysis – examine whether pitch-zone height/side relates to batted ball launch direction.
 3. Quantile regression
-4. Modeling – train XGBoost models that (a) predict which fielder is responsible for a batted ball and (b) predict a batting result from batted-ball kinematics, fielder positioning, arm strength, and batter sprint speed.
-5. Infield defensive formation optimization – use the trained models to identify the alignment that minimizes expected hit probability for each of the 9 pitch zones.
+4. Modeling – train XGBoost models that predict which fielder is responsible for a batted ball and (b) predict a batting result from batted ball kinematics, fielder positioning, arm strength, and batter sprint speed.
+5. Infield defensive formation optimization – use the trained models to identify the defensive formation that minimizes expected hit probability for each pitch zone.
 6. Robustness/discussion – worst-case scenario evaluation of the recommended shifts, the distribution of batted balls from low-zone pitches, and a check of the quantile-regression coefficient estimates.
 
 ## Repository Structure
 
-All scripts are numbered in the order they are meant to be run. Each script loads the `.RData` output of the preceding step(s). 
+All scripts are numbered in the order they are meant to be run. 
 
 | Step | Script |
 |---|---|
