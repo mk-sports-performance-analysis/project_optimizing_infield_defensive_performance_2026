@@ -2,17 +2,16 @@
 
 This repository contains the R analysis pipeline that was used to examine whether the horizontal launch direction of batted balls varies depending on pitch location in U.S. Major League Baseball. In addition, this pipeline was designed to identify the optimal infield defensive formation that minimizes the probability of a base hit for each of nine pitch-location zones.
 
-
 ## Overview
 
 The pipeline is organized into the following stages:
 
-1. Data extraction & preprocessing –  clean data, convert units, and define a 9-zone grid.
+1. Data extraction & preprocessing – clean data, convert units, and define a 9-zone grid.
 2. Descriptive analysis – examine whether pitch-zone height/side relates to batted ball launch direction.
 3. Quantile regression
 4. Modeling – train XGBoost models that (a) predict which fielder is responsible for a batted ball and (b) predict a batting result from batted-ball kinematics, fielder positioning, arm strength, and batter sprint speed.
-5. Infield defensive formation optimization –  use the trained models to identify the alignment that minimizes expected hit probability for each of the 9 pitch zones.
-6. Robustness/discussion  – worst-case scenario evaluation of the recommended shifts, the distribution of batted balls from low-zone pitches, and a check of the quantile-regression coefficient estimates.
+5. Infield defensive formation optimization – use the trained models to identify the alignment that minimizes expected hit probability for each of the 9 pitch zones.
+6. Robustness/discussion – worst-case scenario evaluation of the recommended shifts, the distribution of batted balls from low-zone pitches, and a check of the quantile-regression coefficient estimates.
 
 ## Repository Structure
 
@@ -33,8 +32,8 @@ All scripts are numbered in the order they are meant to be run. Each script load
 | 11 | `11_quantile_regression_coefficient_bias_estimation.R` | 
 
 ## Data Source
-All data listed above is owned by MLB Advanced Media, L.P. (MLB).
-This repository distributes analysis code only; no data is included. Use of the data is subject to Baseball Savant / MLB's terms of use.
+All data listed above are owned by MLB Advanced Media, L.P. (MLB).
+This repository distributes analysis code only; no data are included. Use of the data is subject to Baseball Savant / MLB's terms of use.
 
 - https://baseballsavant.mlb.com/statcast_search
 - https://baseballsavant.mlb.com/leaderboard/arm-strength
@@ -44,62 +43,61 @@ This repository distributes analysis code only; no data is included. Use of the 
 
 ## Data Requirements
 
-This repository contains **analysis code only**. The following external inputs are read by the scripts but are **not included** here (due to size and data-provider terms of use), and must be obtained separately — e.g., via the [`baseballr`](https://billpetti.github.io/baseballr/) package and [Baseball Savant](https://baseballsavant.mlb.com) leaderboards:
+This repository contains analysis code only. The following external inputs are read by the scripts but are not included here, and must be obtained separately — e.g., via the [`baseballr`](https://billpetti.github.io/baseballr/) package and [Baseball Savant](https://baseballsavant.mlb.com) leaderboards:
 
 | File(s) | Source |
 |---|---|
 | `MLB2023.RData`, `MLB2024.RData`, `MLB2025.RData` | Statcast pitch-by-pitch data, one file per season|
-| `sprint_speed_2023_2025.csv` |  Baseball Savant Sprint Speed leaderboard |
+| `sprint_speed_2023_2025.csv` | Baseball Savant Sprint Speed leaderboard |
 | `arm_strength_2023.csv`, `arm_strength_2024.csv`, `arm_strength_2025.csv`, `arm_strength_all.csv` |Baseball Savant Arm Strength leaderboards |
-| `positioning_data2023_2025.RData` | Baseball Savant fielder starting-position  |
+| `positioning_data2023_2025.RData` | Baseball Savant fielder starting-position |
 
-Each script also expects the `.RData`/`.rds` outputs produced by the preceding scripts in the pipeline (see table above) to be present in the working directory.
+Each script  expects the `.RData`/`.rds` outputs produced by the preceding scripts in the pipeline to be present in the working directory.
 
-## Requirements
-- R ≥ 4.2 (recommended)
-- R packages:
+## Computational Environment
+
+- R Environment: R 4.4.0
+- Executed R Package Stack:
 
 ```r
+# Executed package versions used for analysis and validation
 install.packages(c(
-  "tidyverse",   # 2.0.0
-  "remotes",     # 2.5.0
-  "stringr",     # 1.5.1
-  "ggtext",      # 0.1.2
-  "ggplot2",     # 4.0.3
-  "dplyr",       # 1.1.4
-  "ggsignif",    # 0.6.4
-  "viridis",     # 0.6.5
-  "ggpattern",   # 1.3.1
-  "shadowtext",  # 0.1.6
-  "qgam",        # 2.0.0
-  "DescTools",   # 0.99.60
-  "xgboost",     # 1.7.7.1
-  "caret",       # 7.0-1
-  "pROC",        # 1.18.5
-  "ggnewscale",  # 0.5.2
-  "patchwork",   # 1.3.2
-  "scales",      # 1.4.0
-  "here"         # 1.0.2
+  "tidyverse",    # 2.0.0
+  "remotes",      # 2.5.0
+  "stringr",      # 1.5.1
+  "ggtext",       # 0.1.2
+  "ggplot2",      # 4.0.3
+  "dplyr",        # 1.1.4
+  "ggsignif",     # 0.6.4
+  "viridis",      # 0.6.5
+  "ggpattern",    # 1.3.1
+  "shadowtext",   # 0.1.6
+  "qgam",         # 2.0.0
+  "DescTools",    # 0.99.60
+  "xgboost",      # 3.2.1.1
+  "caret",        # 7.0.1
+  "pROC",         # 1.18.5
+  "ggnewscale",   # 0.5.2
+  "patchwork",    # 1.3.2
+  "scales",       # 1.4.0
+  "here"          # 1.0.2
 ))
 
-# baseballr is installed from GitHub
+# Installed from GitHub / CRAN (verified version 2.0.0)
 remotes::install_github("BillPetti/baseballr")
 ```
+
 ## Recommended layout
 
 ```
 repo-root/
-├─ .here             # empty marker file — see below
-├─ R/                 # all numbered scripts + load_functions.R
-├─ data/              # NOT uploaded — you (or a future user) supply raw inputs + generated files here
-│   ├─ .gitkeep
-│   └─ README.md      # short note on what to place here (see "Data Requirements" above)
+├─ .here             
+├─ R/                 
+├─ data/             
 ├─ .gitignore
 ├─ README.md
 └─ LICENSE
 ```
-
-Use the [`here`](https://here.r-lib.org/) package so the working directory is resolved relative to the repository root rather than an absolute path:
 
 ## Citation
 
