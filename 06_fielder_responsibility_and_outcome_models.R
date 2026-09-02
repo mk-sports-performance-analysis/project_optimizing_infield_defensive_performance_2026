@@ -10,6 +10,7 @@ library(here)
 # Load processed data
 load(here("data", "battedball.RData"))
 source(here("R", "load_functions.R"))
+
 battedball <- battedball |>
   mutate(dteam = ifelse(inning_topbot == "Top", home_team, away_team)) |>
   mutate(
@@ -387,7 +388,7 @@ x_train_R <- model.matrix(
     home_teamCWS + home_teamDET + home_teamHOU + home_teamKC + home_teamLAA + home_teamLAD + home_teamMIA + home_teamMIL +
     home_teamMIN + home_teamNYM + home_teamNYY + home_teamOAK + home_teamPHI + home_teamPIT + home_teamSD + home_teamSEA +
     home_teamSF + home_teamSTL + home_teamTB + home_teamTEX + home_teamTOR + home_teamWSH - 1,
-  data = train_R
+  data = train_R, na.action = na.pass
 )
 
 dtrain_R0 <- xgb.DMatrix(data = x_train_R, label = train_R$y_position)
@@ -402,7 +403,7 @@ x_test_R <- model.matrix(
     home_teamCWS + home_teamDET + home_teamHOU + home_teamKC + home_teamLAA + home_teamLAD + home_teamMIA + home_teamMIL +
     home_teamMIN + home_teamNYM + home_teamNYY + home_teamOAK + home_teamPHI + home_teamPIT + home_teamSD + home_teamSEA +
     home_teamSF + home_teamSTL + home_teamTB + home_teamTEX + home_teamTOR + home_teamWSH - 1,
-  data = test_R
+  data = test_R, na.action = na.pass
 )
 
 dtest_R0 <- xgb.DMatrix(data = x_test_R, label = test_R$y_position)
@@ -422,10 +423,13 @@ run_cv <- function(dtrain, params, max_depth, nrounds = 250, nfold = 5) {
     params = params_cv, data = dtrain, nrounds = nrounds, nfold = nfold,
     early_stopping_rounds = 20, maximize = FALSE, verbose = 0
   )
+  best_idx <- which.min(cv$evaluation_log$test_mlogloss_mean)
+  best_score <- cv$evaluation_log$test_mlogloss_mean[best_idx]
+  
   tibble(
     max_depth = max_depth,
-    best_nrounds = cv$best_iteration,
-    best_score = min(cv$evaluation_log$test_mlogloss_mean, na.rm = TRUE)
+    best_nrounds = best_idx,
+    best_score = best_score
   )
 }
 
@@ -434,7 +438,7 @@ depth_grid <- c(1, 2, 3)
 set.seed(1)
 cv_res_R <- purrr::map_dfr(depth_grid, ~run_cv(dtrain = dtrain_R0, params = params, max_depth = .x))
 
-best <- cv_res_R |> slice_min(best_score)
+best <- cv_res_R |> slice_min(best_score, n = 1, with_ties = FALSE)
 
 params_final_R <- modifyList(params, list(max_depth = best$max_depth))
 
@@ -445,13 +449,20 @@ model_R_respon <- xgb.train(
 )
 
 pred_prob_R <- predict(model_R_respon, dtest_R0)
-pred_prob_R <- matrix(pred_prob_R, ncol = num_class, byrow = TRUE)
+
 colnames(pred_prob_R) <- levels(train_R$fielderposition)
-
-pred_class_R <- colnames(pred_prob_R)[max.col(pred_prob_R, ties.method = "first")]
-pred_class_R <- factor(pred_class_R, levels = levels(train_R$fielderposition))
-
-l2 <- confusionMatrix(pred_class_R, factor(test_R$fielderposition))
+pred_class_R <- colnames(pred_prob_R)[
+  max.col(pred_prob_R, ties.method = "first")
+]
+pred_class_R <- factor(
+  pred_class_R,
+  levels = levels(train_R$fielderposition)
+)
+actual_class_R <- factor(
+  test_R$fielderposition,
+  levels = levels(train_R$fielderposition)
+)
+l2 <- confusionMatrix(pred_class_R, actual_class_R)
 l2
 
 f1_R <- round(mean(l2$byClass[, 7]), 3)
@@ -467,7 +478,7 @@ x_train_L <- model.matrix(
     home_teamCWS + home_teamDET + home_teamHOU + home_teamKC + home_teamLAA + home_teamLAD + home_teamMIA + home_teamMIL +
     home_teamMIN + home_teamNYM + home_teamNYY + home_teamOAK + home_teamPHI + home_teamPIT + home_teamSD + home_teamSEA +
     home_teamSF + home_teamSTL + home_teamTB + home_teamTEX + home_teamTOR + home_teamWSH - 1,
-  data = train_L
+  data = train_L, na.action = na.pass
 )
 
 dtrain_L0 <- xgb.DMatrix(data = x_train_L, label = train_L$y_position)
@@ -482,31 +493,35 @@ x_test_L <- model.matrix(
     home_teamCWS + home_teamDET + home_teamHOU + home_teamKC + home_teamLAA + home_teamLAD + home_teamMIA + home_teamMIL +
     home_teamMIN + home_teamNYM + home_teamNYY + home_teamOAK + home_teamPHI + home_teamPIT + home_teamSD + home_teamSEA +
     home_teamSF + home_teamSTL + home_teamTB + home_teamTEX + home_teamTOR + home_teamWSH - 1,
-  data = test_L
+  data = test_L, na.action = na.pass
 )
 
 dtest_L0 <- xgb.DMatrix(data = x_test_L, label = test_L$y_position)
 
+num_class_L <- nlevels(train_L$fielderposition)
+params_L <- modifyList(params, list(num_class = num_class_L))
+
 set.seed(1)
-cv_res_L <- purrr::map_dfr(depth_grid, ~run_cv(dtrain = dtrain_L0, params = params, max_depth = .x))
+cv_res_L <- purrr::map_dfr(depth_grid, ~run_cv(dtrain = dtrain_L0, params = params_L, max_depth = .x))
 
-best <- cv_res_L |> slice_min(best_score)
+best_L <- cv_res_L |> slice_min(best_score, n = 1, with_ties = FALSE)
 
-params_final_L <- modifyList(params, list(max_depth = best$max_depth))
+params_final_L <- modifyList(params_L, list(max_depth = best_L$max_depth))
 
 set.seed(1)
 model_L_respon <- xgb.train(
   params = params_final_L, data = dtrain_L0,
-  nrounds = best$best_nrounds, verbose = 0
+  nrounds = best_L$best_nrounds, verbose = 0
 )
 
 pred_prob_L <- predict(model_L_respon, dtest_L0)
-pred_prob_L <- matrix(pred_prob_L, ncol = num_class, byrow = TRUE)
 colnames(pred_prob_L) <- levels(train_L$fielderposition)
 
 pred_class_L <- colnames(pred_prob_L)[max.col(pred_prob_L, ties.method = "first")]
 pred_class_L <- factor(pred_class_L, levels = levels(train_L$fielderposition))
 
+actual_class_L <- factor(test_L$fielderposition,levels = levels(train_L$fielderposition))
+ 
 l2 <- confusionMatrix(pred_class_L, factor(test_L$fielderposition))
 l2
 
@@ -517,10 +532,9 @@ save(model_R_respon, model_L_respon, file = here("data", "responsibility model.R
 
 ###################################
   
-  pred_respon_R <- matrix(predict(model_R_respon, dtrain_R0), ncol = num_class, byrow = TRUE) |>
-    data.frame()
-  colnames(pred_respon_R) <- levels(train_R$fielderposition)
-  
+pred_respon_R <- as.data.frame(predict(model_R_respon, dtrain_R0))
+colnames(pred_respon_R) <- levels(train_R$fielderposition)
+
   infielders <- c("1B", "2B", "3B", "SS")
   probs_if <- as.matrix(pred_respon_R[, infielders])
   hit_if <- probs_if >= 0.20
@@ -562,11 +576,11 @@ save(model_R_respon, model_L_respon, file = here("data", "responsibility model.R
       p1B_1B_thtime_eff = ifelse(is_bounced_bip, p1B_1B_thtime_eff, NA_real_)
     )
   
-  pred_respon_R <- matrix(predict(model_R_respon, dtest_R0), ncol = num_class, byrow = TRUE) |>
+  pred_respon_test_R <- predict(model_R_respon, dtest_R0) |>
     data.frame()
-  colnames(pred_respon_R) <- levels(test_R$fielderposition)
+  colnames(pred_respon_test_R) <- levels(test_R$fielderposition)
   
-  probs_if <- as.matrix(pred_respon_R[, infielders])
+  probs_if <- as.matrix(pred_respon_test_R[, infielders])
   hit_if <- probs_if >= 0.20
   max_idx <- max.col(probs_if, ties.method = "first")
   
@@ -606,7 +620,7 @@ save(model_R_respon, model_L_respon, file = here("data", "responsibility model.R
       p1B_1B_thtime_eff = ifelse(is_bounced_bip, p1B_1B_thtime_eff, NA_real_)
     )
   
-  pred_respon_L <- matrix(predict(model_L_respon, dtrain_L0), ncol = num_class, byrow = TRUE) |>
+  pred_respon_L <- predict(model_L_respon, dtrain_L0) |>
     data.frame()
   colnames(pred_respon_L) <- levels(train_L$fielderposition)
   
@@ -650,11 +664,11 @@ save(model_R_respon, model_L_respon, file = here("data", "responsibility model.R
       p1B_1B_thtime_eff = ifelse(is_bounced_bip, p1B_1B_thtime_eff, NA_real_)
     )
   
-  pred_respon_L <- matrix(predict(model_L_respon, dtest_L0), ncol = num_class, byrow = TRUE) |>
+  pred_respon_test_L <- predict(model_L_respon, dtest_L0) |>
     data.frame()
-  colnames(pred_respon_L) <- levels(test_L$fielderposition)
+  colnames(pred_respon_test_L) <- levels(test_L$fielderposition)
   
-  probs_if <- as.matrix(pred_respon_L[, infielders])
+  probs_if <- as.matrix(pred_respon_test_L[, infielders])
   hit_if <- probs_if >= 0.20
   max_idx <- max.col(probs_if, ties.method = "first")
   
@@ -786,9 +800,11 @@ save(model_R_respon, model_L_respon, file = here("data", "responsibility model.R
       params = params_cv, data = dtrain, nrounds = nrounds, nfold = nfold,
       early_stopping_rounds = 20, maximize = FALSE, verbose = 0
     )
+    best_idx <- which.min(cv$evaluation_log$test_logloss_mean)
+    best_score <- cv$evaluation_log$test_logloss_mean[best_idx]
     tibble(
       max_depth = max_depth,
-      best_nrounds = cv$best_iteration,
+      best_nrounds = best_idx,
       best_score = min(cv$evaluation_log$test_logloss_mean)
     )
   }
@@ -801,7 +817,7 @@ save(model_R_respon, model_L_respon, file = here("data", "responsibility model.R
     ~run_cv_2(dtrain = dtrain_R, params_base = params_base, max_depth = .x)
   )
   
-  train_R_best_row <- cv_train_R |> slice_min(best_score)
+  train_R_best_row <- cv_train_R |> slice_min(best_score, n = 1, with_ties = FALSE)
   train_R_best_depth <- train_R_best_row$max_depth
   train_R_best_nrounds <- train_R_best_row$best_nrounds
   
@@ -811,7 +827,7 @@ save(model_R_respon, model_L_respon, file = here("data", "responsibility model.R
     ~run_cv_2(dtrain = dtrain_L, params_base = params_base, max_depth = .x)
   )
   
-  train_L_best_row <- cv_train_L |> slice_min(best_score)
+  train_L_best_row <- cv_train_L |> slice_min(best_score, n = 1, with_ties = FALSE)
   train_L_best_depth <- train_L_best_row$max_depth
   train_L_best_nrounds <- train_L_best_row$best_nrounds
   
@@ -839,7 +855,6 @@ save(model_R_respon, model_L_respon, file = here("data", "responsibility model.R
   
   pred_prob_R <- predict(model_final_R, newdata = dtest_R)
   
-  library(pROC)
   
   roc_R <- roc(
     response = test_R$results,
@@ -871,5 +886,5 @@ save(model_R_respon, model_L_respon, file = here("data", "responsibility model.R
   
   all_result <- data.frame(aucr = round(auc_R, 3),aucl = round(auc_L, 3))
   
-    
+
 save(test_R, test_L, model_final_R, model_final_L, file = here("data", "Outcome prediction model.RData"))
