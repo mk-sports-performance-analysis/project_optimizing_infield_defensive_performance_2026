@@ -43,7 +43,7 @@ This repository distributes analysis code only; no data are included. Use of the
 
 ## Data Requirements
 
-This repository contains analysis code only. The following external inputs are read by the scripts but are not included here, and must be obtained separately — e.g., via the [`baseballr`](https://billpetti.github.io/baseballr/) package and [Baseball Savant](https://baseballsavant.mlb.com) leaderboards:
+This repository contains analysis code only. The following external inputs and must be obtained from the data source.
 
 | File(s) | Source |
 |---|---|
@@ -52,15 +52,12 @@ This repository contains analysis code only. The following external inputs are r
 | `arm_strength_2023.csv`, `arm_strength_2024.csv`, `arm_strength_2025.csv`, `arm_strength_all.csv` |Baseball Savant Arm Strength leaderboards |
 | `positioning_data2023_2025.RData` | Baseball Savant fielder starting-position |
 
-Each script  expects the `.RData`/`.rds` outputs produced by the preceding scripts in the pipeline to be present in the working directory.
-
 ## Computational Environment
 
 - R Environment: R 4.4.0
-- Executed R Package Stack:
+- R Package version:
 
 ```r
-# Executed package versions used for analysis and validation
 install.packages(c(
   "tidyverse",    # 2.0.0
   "remotes",      # 2.5.0
@@ -109,8 +106,4 @@ If you use this code, please cite the associated publication:
 
 ## License
 
-This code is released under the **MIT License** (see `LICENSE`). MIT is a standard, permissive choice for academic research code: it lets anyone reuse, modify, and redistribute the scripts (including commercially) as long as the copyright notice is kept, while placing no warranty or liability on the authors. It does not cover any data, which is not distributed here.
-
-Note that Creative Commons licenses (e.g. CC-BY-4.0) are intended for creative/data works, not software, and are generally discouraged for code — MIT, Apache-2.0, or BSD-3-Clause are the conventional choices for R analysis code like this. If you'd prefer a copyleft license that requires downstream modifications to also stay open-source, GPL-3.0 is the standard alternative to MIT.
-
-Consider also adding a [`CITATION.cff`](https://citation-file-format.github.io/) file once the associated manuscript is published, so GitHub surfaces a "Cite this repository" option automatically.
+This code is released under the **MIT License** (see `LICENSE`). 
