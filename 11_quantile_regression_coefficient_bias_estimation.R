@@ -82,9 +82,6 @@ fit_balanced_once <- function(base_data, formula, rep_id) {
 resample_R <- map_dfr(1:REPS, ~ fit_balanced_once(base_R, form_qgam, .x))
 resample_L <- map_dfr(1:REPS, ~ fit_balanced_once(base_L, form_qgam, .x))
 
-resample_R <-boot_bal_R
-resample_L <-boot_bal_L
-
 format_combined_results <- function(m_list) {
   map_df(m_list, function(m) {
     sum_m <- summary(m)
@@ -127,8 +124,8 @@ summarise_resample <- function(resample_df, side_label) {
     summarise(
       resample_mean = mean(estimate),
       resample_sd   = sd(estimate),
-      resample_lo   = quantile(estimate, 0.025),
-      resample_hi   = quantile(estimate, 0.975),
+      resample_lo   = min(estimate),
+      resample_hi   = max(estimate),
       .groups = "drop"
     ) |>
     mutate(side = side_label)
