@@ -147,11 +147,10 @@ for (zonenum in 1:9) {
       home_teamCWS + home_teamDET + home_teamHOU + home_teamKC + home_teamLAA + home_teamLAD + home_teamMIA + home_teamMIL +
       home_teamMIN + home_teamNYM + home_teamNYY + home_teamOAK + home_teamPHI + home_teamPIT + home_teamSD + home_teamSEA +
       home_teamSF + home_teamSTL + home_teamTB + home_teamTEX + home_teamTOR + home_teamWSH - 1,
-    data = dat_exp
+    data = dat_exp, na.action = na.pass
   ) |> xgb.DMatrix()
   
-  pred_respon_R <- matrix(predict(model_R_respon, newdata = x_dat_exp, type = "prob"),
-                          ncol = num_class, byrow = TRUE)
+  pred_respon_R <- predict(model_R_respon, newdata = x_dat_exp)
   colnames(pred_respon_R) <- levels(test_R$fielderposition)
   
   probs_if <- as.matrix(pred_respon_R[, infielders])
@@ -326,11 +325,10 @@ for (zonenum in 1:9) {
       home_teamCWS + home_teamDET + home_teamHOU + home_teamKC + home_teamLAA + home_teamLAD + home_teamMIA + home_teamMIL +
       home_teamMIN + home_teamNYM + home_teamNYY + home_teamOAK + home_teamPHI + home_teamPIT + home_teamSD + home_teamSEA +
       home_teamSF + home_teamSTL + home_teamTB + home_teamTEX + home_teamTOR + home_teamWSH - 1,
-    data = dat_exp
+    data = dat_exp, na.action = na.pass
   ) |> xgb.DMatrix()
   
-  pred_respon_L <- matrix(predict(model_L_respon, newdata = x_dat_exp, type = "prob"),
-                          ncol = num_class, byrow = TRUE)
+  pred_respon_L <- predict(model_L_respon, newdata = x_dat_exp)
   colnames(pred_respon_L) <- levels(test_L$fielderposition)
   
   probs_if <- as.matrix(pred_respon_L[, infielders])
