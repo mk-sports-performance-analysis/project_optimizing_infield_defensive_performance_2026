@@ -169,11 +169,13 @@ eval_L <- tibble(
 eval_L
 
 # figure 4 ##################
+library(tidyverse)
 
 models_R <- list("10%" = qgam_R_10, "25%" = qgam_R_25, "50%" = qgam_R_50, "75%" = qgam_R_75, "90%" = qgam_R_90)
 models_L <- list("10%" = qgam_L_10, "25%" = qgam_L_25, "50%" = qgam_L_50, "75%" = qgam_L_75, "90%" = qgam_L_90)
 
 save(models_R, models_L, file = here("data", "QR_main_model.RData"))
+#load("QR_main_model.RData")
 
 format_combined_results <- function(m_list) {
   map_df(m_list, function(m) {

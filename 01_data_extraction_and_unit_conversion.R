@@ -5,6 +5,7 @@ library(here)
 source(here::here("R", "load_functions.R"))
 year <- c(2023:2025)
 
+
 alldata <- data.frame()
 for (yr in year){
   #year <- 2023
@@ -84,4 +85,5 @@ subdata <- subdata |>
   mutate(sz_top = sz_top * 0.3048, sz_bot = sz_bot * 0.3048) 
 
 save(subdata, file = here::here("data", "subdata_ed.RData"))
+
 

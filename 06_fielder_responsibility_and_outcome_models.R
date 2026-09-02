@@ -10,7 +10,6 @@ library(here)
 # Load processed data
 load(here("data", "battedball.RData"))
 source(here("R", "load_functions.R"))
-
 battedball <- battedball |>
   mutate(dteam = ifelse(inning_topbot == "Top", home_team, away_team)) |>
   mutate(
@@ -19,7 +18,7 @@ battedball <- battedball |>
   ) |>
   filter(fielderposition %in% c("1B", "2B", "3B","SS" ,"CF", "LF", "RF"))
 
-hp_to_1b <- read_csv("sprint_speed_2023_2025.csv") |>
+hp_to_1b <- read_csv(here("data", "sprint_speed_2023_2025.csv")) |>
   select(player_id, team, hp_to_1b) |>
   rename(batter = player_id)
 
@@ -368,7 +367,7 @@ X_throw <- onehot(base_data$p_throws, prefix = "p_throws")
 base_data <- base_data |>
   cbind(X_throw, X_team, X_home)
 
-save(base_data, file = "base_data.RData")
+save(base_data, file = here("data", "base_data.RData"))
 
 R <- base_data |> filter(stand == "R")
 L <- base_data |> filter(stand == "L")
@@ -873,5 +872,4 @@ save(model_R_respon, model_L_respon, file = here("data", "responsibility model.R
   all_result <- data.frame(aucr = round(auc_R, 3),aucl = round(auc_L, 3))
   
     
-
 save(test_R, test_L, model_final_R, model_final_L, file = here("data", "Outcome prediction model.RData"))

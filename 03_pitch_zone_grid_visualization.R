@@ -8,6 +8,7 @@ library(here)
 load(here("data", "battedball.RData"))
 source(here("R", "load_functions.R"))
 
+
 # Count observations by pitch zone and batter handedness
 zone_n <- battedball |>
   group_by(stand) |>
