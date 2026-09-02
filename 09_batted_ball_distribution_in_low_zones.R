@@ -6,7 +6,6 @@ library(here)
 
 load(here("data", "base_data.RData"))
 source(here("R", "load_functions.R"))
-load(here("data", "Outcome prediction model.RData"))
 load(here("data", "l_2025_league.RData"))
 load(here("data", "optimal set.RData"))
 
