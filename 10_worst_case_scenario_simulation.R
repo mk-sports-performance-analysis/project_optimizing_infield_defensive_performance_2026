@@ -8,19 +8,17 @@ library(here)
 source(here("R", "load_functions.R"))
 load(here("data", "dataset for sup 3.RData"))
 
-roc_all <- roc(
-  c(res_R$y_result, res_L$y_result),
-  c(res_R$p0, res_L$p0),
-  direction = "<"
-)
+roc_R <- roc(res_R$y_result, res_R$p0, direction = "<")
+thresh_R <- coords(roc_R, "best", best.method = "youden", ret = "threshold")$threshold
 
-threshold <- coords(roc_all,"best",best.method = "youden",ret = "threshold")
-threshold <- threshold$threshold
+roc_L <- roc(res_L$y_result, res_L$p0, direction = "<")
+thresh_L <- coords(roc_L, "best", best.method = "youden", ret = "threshold")$threshold
+
 
 res_R <- res_R |>
   mutate(
-    predres = ifelse(p1 > threshold, 1, 0),
-    predbase = ifelse(p0 > threshold, 1, 0),
+    predres = ifelse(p1 > thresh_R, 1, 0),
+    predbase = ifelse(p0 > thresh_R, 1, 0),
     base_errors = case_when(
       y_result == 1 & predbase == 0 ~ "False negative",
       y_result == 0 & predbase == 1 ~ "False positive",
@@ -36,8 +34,8 @@ res_R <- res_R |>
 
 res_L <- res_L |>
   mutate(
-    predres = ifelse(p1 > threshold, 1, 0),
-    predbase = ifelse(p0 > threshold, 1, 0),
+    predres = ifelse(p1 > roc_L, 1, 0),
+    predbase = ifelse(p0 > roc_L, 1, 0),
     base_errors = case_when(
       y_result == 1 & predbase == 0 ~ "False negative",
       y_result == 0 & predbase == 1 ~ "False positive",
