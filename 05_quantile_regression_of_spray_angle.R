@@ -4,7 +4,7 @@
 library(tidyverse)
 library(ggsignif)
 library(viridis)
-library(qgam)
+library(quantreg)
 library(DescTools)
 library(here)
 
@@ -56,11 +56,11 @@ form_qgam_R <- sprayangle ~
   pfx_x_c*platoon
 
 
-qgam_R_10 <- qgam(form_qgam_R, data = train1_R, qu = 0.10)
-qgam_R_25 <- qgam(form_qgam_R, data = train1_R, qu = 0.25)
-qgam_R_50 <- qgam(form_qgam_R, data = train1_R, qu = 0.5)
-qgam_R_75 <- qgam(form_qgam_R, data = train1_R, qu = 0.75)
-qgam_R_90 <- qgam(form_qgam_R, data = train1_R, qu = 0.90)
+qgam_R_10 <- rq(form_qgam_R, data = train1_R, tau = 0.10)
+qgam_R_25 <- rq(form_qgam_R, data = train1_R, tau = 0.25)
+qgam_R_50 <- rq(form_qgam_R, data = train1_R, tau = 0.5)
+qgam_R_75 <- rq(form_qgam_R, data = train1_R, tau = 0.75)
+qgam_R_90 <- rq(form_qgam_R, data = train1_R, tau = 0.90)
 
 
 #################
@@ -85,11 +85,11 @@ form_qgam_L <- sprayangle ~
   pfx_z_c*main_type +
   pfx_x_c*platoon
 
-qgam_L_10 <- qgam(form_qgam_L, data = train1_L, qu = 0.10)
-qgam_L_25 <- qgam(form_qgam_L, data = train1_L, qu = 0.25)
-qgam_L_50 <- qgam(form_qgam_L, data = train1_L, qu = 0.5)
-qgam_L_75 <- qgam(form_qgam_L, data = train1_L, qu = 0.75)
-qgam_L_90 <- qgam(form_qgam_L, data = train1_L, qu = 0.90)
+qgam_L_10 <- rq(form_qgam_L, data = train1_L, tau = 0.10)
+qgam_L_25 <- rq(form_qgam_L, data = train1_L, tau = 0.25)
+qgam_L_50 <- rq(form_qgam_L, data = train1_L, tau = 0.5)
+qgam_L_75 <- rq(form_qgam_L, data = train1_L, tau = 0.75)
+qgam_L_90 <- rq(form_qgam_L, data = train1_L, tau = 0.90)
 
 #validation
 
@@ -179,14 +179,14 @@ save(models_R, models_L, file = here("data", "QR_main_model.RData"))
 
 format_combined_results <- function(m_list) {
   map_df(m_list, function(m) {
-    sum_m <- summary(m)
-    as.data.frame(sum_m$p.table) |>
+    sum_m <- summary(m, se = "boot")   
+    as.data.frame(sum_m$coefficients) |>  
       tibble::rownames_to_column("term") |>
       mutate(
-        est = sprintf("%.1f", Estimate),
-        lower = sprintf("%.1f", Estimate - 1.96 * `Std. Error`),
-        upper = sprintf("%.1f", Estimate + 1.96 * `Std. Error`),
-        sig = case_when(`Pr(>|z|)` < 0.001 ~ "*", TRUE ~ ""),
+        est = sprintf("%.1f", Value),                              
+        lower = sprintf("%.1f", Value - 1.96 * `Std. Error`),
+        upper = sprintf("%.1f", Value + 1.96 * `Std. Error`),
+        sig = case_when(`Pr(>|t|)` < 0.001 ~ "*", TRUE ~ ""),        
         display_text = paste0(est, sig, "@[", lower, ", ", upper, "]"),
         display_text = gsub("-", "−", display_text)
       ) |>
@@ -309,13 +309,12 @@ model_list_L <- list("tau_0.10" = qgam_L_10, "tau_0.25" = qgam_L_25, "tau_0.50" 
 
 get_predictions <- function(model_list, grid_df) {
   imap_dfr(model_list, function(m, label) {
-    pred <- predict(m, newdata = grid_df, se.fit = TRUE)
+    pred <- predict(m, newdata = grid_df, interval = "confidence", se = "boot")
     grid_df |>
       mutate(
-        pred_value = pred$fit,
-        se_value   = pred$se.fit,
-        lower      = pred_value - 1.96 * se_value,
-        upper      = pred_value + 1.96 * se_value,
+        pred_value = pred[, "fit"],
+        lower      = pred[, "lower"],
+        upper      = pred[, "higher"],
         tau        = label
       )
   })
