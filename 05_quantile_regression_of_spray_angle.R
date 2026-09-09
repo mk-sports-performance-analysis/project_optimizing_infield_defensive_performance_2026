@@ -45,7 +45,7 @@ train1_R <- R |>
 test1_R <- R |>
   filter(year == "2025")
 
-form_qgam_R <- sprayangle ~
+form_qr_R <- sprayangle ~
   plate_x + plate_z +
   platoon +
   situation_cat +
@@ -56,11 +56,11 @@ form_qgam_R <- sprayangle ~
   pfx_x_c*platoon
 
 
-qgam_R_10 <- rq(form_qgam_R, data = train1_R, tau = 0.10)
-qgam_R_25 <- rq(form_qgam_R, data = train1_R, tau = 0.25)
-qgam_R_50 <- rq(form_qgam_R, data = train1_R, tau = 0.5)
-qgam_R_75 <- rq(form_qgam_R, data = train1_R, tau = 0.75)
-qgam_R_90 <- rq(form_qgam_R, data = train1_R, tau = 0.90)
+qgam_R_10 <- rq(form_qr_R, data = train1_R, tau = 0.10)
+qgam_R_25 <- rq(form_qr_R, data = train1_R, tau = 0.25)
+qgam_R_50 <- rq(form_qr_R, data = train1_R, tau = 0.5)
+qgam_R_75 <- rq(form_qr_R, data = train1_R, tau = 0.75)
+qgam_R_90 <- rq(form_qr_R, data = train1_R, tau = 0.90)
 
 
 #################
@@ -75,7 +75,7 @@ test1_L <- L |>
   filter(year == "2025")
 
 
-form_qgam_L <- sprayangle ~
+form_qr_L <- sprayangle ~
   plate_x + plate_z +
   platoon +
   situation_cat +
@@ -85,11 +85,11 @@ form_qgam_L <- sprayangle ~
   pfx_z_c*main_type +
   pfx_x_c*platoon
 
-qgam_L_10 <- rq(form_qgam_L, data = train1_L, tau = 0.10)
-qgam_L_25 <- rq(form_qgam_L, data = train1_L, tau = 0.25)
-qgam_L_50 <- rq(form_qgam_L, data = train1_L, tau = 0.5)
-qgam_L_75 <- rq(form_qgam_L, data = train1_L, tau = 0.75)
-qgam_L_90 <- rq(form_qgam_L, data = train1_L, tau = 0.90)
+qgam_L_10 <- rq(form_qr_L, data = train1_L, tau = 0.10)
+qgam_L_25 <- rq(form_qr_L, data = train1_L, tau = 0.25)
+qgam_L_50 <- rq(form_qr_L, data = train1_L, tau = 0.5)
+qgam_L_75 <- rq(form_qr_L, data = train1_L, tau = 0.75)
+qgam_L_90 <- rq(form_qr_L, data = train1_L, tau = 0.90)
 
 #validation
 
