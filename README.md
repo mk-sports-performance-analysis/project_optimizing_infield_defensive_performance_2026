@@ -69,7 +69,7 @@ install.packages(c(
   "viridis",      # 0.6.5
   "ggpattern",    # 1.3.1
   "shadowtext",   # 0.1.6
-  "qgam",         # 2.0.0
+  "quantreg",     # 5.98
   "DescTools",    # 0.99.60
   "xgboost",      # 3.2.1.1
   "caret",        # 7.0.1
