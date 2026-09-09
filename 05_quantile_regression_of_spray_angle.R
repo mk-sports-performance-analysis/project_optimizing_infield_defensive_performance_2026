@@ -56,11 +56,11 @@ form_qr_R <- sprayangle ~
   pfx_x_c*platoon
 
 
-qgam_R_10 <- rq(form_qr_R, data = train1_R, tau = 0.10)
-qgam_R_25 <- rq(form_qr_R, data = train1_R, tau = 0.25)
-qgam_R_50 <- rq(form_qr_R, data = train1_R, tau = 0.5)
-qgam_R_75 <- rq(form_qr_R, data = train1_R, tau = 0.75)
-qgam_R_90 <- rq(form_qr_R, data = train1_R, tau = 0.90)
+qr_R_10 <- rq(form_qr_R, data = train1_R, tau = 0.10)
+qr_R_25 <- rq(form_qr_R, data = train1_R, tau = 0.25)
+qr_R_50 <- rq(form_qr_R, data = train1_R, tau = 0.5)
+qr_R_75 <- rq(form_qr_R, data = train1_R, tau = 0.75)
+qr_R_90 <- rq(form_qr_R, data = train1_R, tau = 0.90)
 
 
 #################
@@ -85,25 +85,25 @@ form_qr_L <- sprayangle ~
   pfx_z_c*main_type +
   pfx_x_c*platoon
 
-qgam_L_10 <- rq(form_qr_L, data = train1_L, tau = 0.10)
-qgam_L_25 <- rq(form_qr_L, data = train1_L, tau = 0.25)
-qgam_L_50 <- rq(form_qr_L, data = train1_L, tau = 0.5)
-qgam_L_75 <- rq(form_qr_L, data = train1_L, tau = 0.75)
-qgam_L_90 <- rq(form_qr_L, data = train1_L, tau = 0.90)
+qr_L_10 <- rq(form_qr_L, data = train1_L, tau = 0.10)
+qr_L_25 <- rq(form_qr_L, data = train1_L, tau = 0.25)
+qr_L_50 <- rq(form_qr_L, data = train1_L, tau = 0.5)
+qr_L_75 <- rq(form_qr_L, data = train1_L, tau = 0.75)
+qr_L_90 <- rq(form_qr_L, data = train1_L, tau = 0.90)
 
 #validation
 
-pred_10_R  <- predict(qgam_R_10, newdata  = test1_R)
-pred_25_R  <- predict(qgam_R_25, newdata  = test1_R)
-pred_50_R  <- predict(qgam_R_50, newdata  = test1_R)
-pred_75_R  <- predict(qgam_R_75, newdata  = test1_R)
-pred_90_R  <- predict(qgam_R_90, newdata  = test1_R)
+pred_10_R  <- predict(qr_R_10, newdata  = test1_R)
+pred_25_R  <- predict(qr_R_25, newdata  = test1_R)
+pred_50_R  <- predict(qr_R_50, newdata  = test1_R)
+pred_75_R  <- predict(qr_R_75, newdata  = test1_R)
+pred_90_R  <- predict(qr_R_90, newdata  = test1_R)
 
-pred_10_L  <- predict(qgam_L_10, newdata  = test1_L)
-pred_25_L  <- predict(qgam_L_25, newdata  = test1_L)
-pred_50_L  <- predict(qgam_L_50, newdata  = test1_L)
-pred_75_L  <- predict(qgam_L_75, newdata  = test1_L)
-pred_90_L  <- predict(qgam_L_90, newdata  = test1_L)
+pred_10_L  <- predict(qr_L_10, newdata  = test1_L)
+pred_25_L  <- predict(qr_L_25, newdata  = test1_L)
+pred_50_L  <- predict(qr_L_50, newdata  = test1_L)
+pred_75_L  <- predict(qr_L_75, newdata  = test1_L)
+pred_90_L  <- predict(qr_L_90, newdata  = test1_L)
 
 pinball <- function(y, yhat, tau){
   mean(ifelse(y >= yhat,
@@ -171,8 +171,8 @@ eval_L
 # figure 4 ##################
 library(tidyverse)
 
-models_R <- list("10%" = qgam_R_10, "25%" = qgam_R_25, "50%" = qgam_R_50, "75%" = qgam_R_75, "90%" = qgam_R_90)
-models_L <- list("10%" = qgam_L_10, "25%" = qgam_L_25, "50%" = qgam_L_50, "75%" = qgam_L_75, "90%" = qgam_L_90)
+models_R <- list("10%" = qr_R_10, "25%" = qr_R_25, "50%" = qr_R_50, "75%" = qr_R_75, "90%" = qr_R_90)
+models_L <- list("10%" = qr_L_10, "25%" = qr_L_25, "50%" = qr_L_50, "75%" = qr_L_75, "90%" = qr_L_90)
 
 save(models_R, models_L, file = here("data", "QR_main_model.RData"))
 #load("QR_main_model.RData")
@@ -288,23 +288,23 @@ grid_data <- expand.grid(
 )
 
 model_list_R <- list(
-  "tau_0.10" = qgam_R_10, 
-  "tau_0.25" = qgam_R_25, 
-  "tau_0.50" = qgam_R_50, 
-  "tau_0.75" = qgam_R_75, 
-  "tau_0.90" = qgam_R_90
+  "tau_0.10" = qr_R_10, 
+  "tau_0.25" = qr_R_25, 
+  "tau_0.50" = qr_R_50, 
+  "tau_0.75" = qr_R_75, 
+  "tau_0.90" = qr_R_90
 )
 
 model_list_L <- list(
-  "tau_0.10" = qgam_L_10, 
-  "tau_0.25" = qgam_L_25, 
-  "tau_0.50" = qgam_L_50, 
-  "tau_0.75" = qgam_L_75, 
-  "tau_0.90" = qgam_L_90
+  "tau_0.10" = qr_L_10, 
+  "tau_0.25" = qr_L_25, 
+  "tau_0.50" = qr_L_50, 
+  "tau_0.75" = qr_L_75, 
+  "tau_0.90" = qr_L_90
 )
 
-model_list_R <- list("tau_0.10" = qgam_R_10, "tau_0.25" = qgam_R_25, "tau_0.50" = qgam_R_50, "tau_0.75" = qgam_R_75, "tau_0.90" = qgam_R_90)
-model_list_L <- list("tau_0.10" = qgam_L_10, "tau_0.25" = qgam_L_25, "tau_0.50" = qgam_L_50, "tau_0.75" = qgam_L_75, "tau_0.90" = qgam_L_90)
+model_list_R <- list("tau_0.10" = qr_R_10, "tau_0.25" = qr_R_25, "tau_0.50" = qr_R_50, "tau_0.75" = qr_R_75, "tau_0.90" = qr_R_90)
+model_list_L <- list("tau_0.10" = qr_L_10, "tau_0.25" = qr_L_25, "tau_0.50" = qr_L_50, "tau_0.75" = qr_L_75, "tau_0.90" = qr_L_90)
 
 
 get_predictions <- function(model_list, grid_df) {
