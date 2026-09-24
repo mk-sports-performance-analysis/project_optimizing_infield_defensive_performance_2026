@@ -144,7 +144,7 @@ subdata3 <- subdata2 |>
       TRUE ~ "Pop-up"
     ),
     launch_angle_cat = factor(launch_angle_cat, levels = c("GB", "LD", "FB", "Pop-up"), ordered = TRUE),
-    discate = ifelse(Distance > 60, "Outfield (>60m)", "Infield (<60m)"),
+    discate = ifelse(Distance > 60, "Outfield (>60m)", "Infield (≤60m)"),
     vz = launch_speed * sin(deg2rad(launch_angle)),
     situation = paste(balls, strikes, sep = "_"),
     situation_cat = case_when(
