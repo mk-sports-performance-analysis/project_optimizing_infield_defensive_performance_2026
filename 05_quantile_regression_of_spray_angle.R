@@ -1,12 +1,16 @@
 # ============================================================
 #  quantile regression
 # ============================================================
+clear1<-try(clearAll(), silent = T) 
+library(ggplot2)
+library(dplyr)
 library(tidyverse)
 library(ggsignif)
 library(viridis)
 library(quantreg)
 library(DescTools)
-library(here)
+library(patchwork)
+
 
 # Load processed data
 load(here("data", "battedball.RData"))
@@ -168,111 +172,6 @@ eval_L <- tibble(
     r2 = 1-(pinball/null_pinball)) 
 eval_L
 
-# figure 4 ##################
-library(tidyverse)
-
-models_R <- list("10%" = qr_R_10, "25%" = qr_R_25, "50%" = qr_R_50, "75%" = qr_R_75, "90%" = qr_R_90)
-models_L <- list("10%" = qr_L_10, "25%" = qr_L_25, "50%" = qr_L_50, "75%" = qr_L_75, "90%" = qr_L_90)
-
-save(models_R, models_L, file = here("data", "QR_main_model.RData"))
-#load("QR_main_model.RData")
-
-format_combined_results <- function(m_list) {
-  map_df(m_list, function(m) {
-    sum_m <- summary(m, se = "boot")   
-    as.data.frame(sum_m$coefficients) |>  
-      tibble::rownames_to_column("term") |>
-      mutate(
-        est = sprintf("%.1f", Value),                              
-        lower = sprintf("%.1f", Value - 1.96 * `Std. Error`),
-        upper = sprintf("%.1f", Value + 1.96 * `Std. Error`),
-        sig = case_when(`Pr(>|t|)` < 0.001 ~ "*", TRUE ~ ""),        
-        display_text = paste0(est, sig, "@[", lower, ", ", upper, "]"),
-        display_text = gsub("-", "−", display_text)
-      ) |>
-      select(term, display_text)
-  }, .id = "quantile") |>
-    pivot_wider(names_from = quantile, values_from = display_text)
-}
-
-windowsFonts(ASE_FONT = windowsFont("Arial"))
-family <- "ASE_FONT"
-FIG_SIZE_MM <- 174
-TEXT_MM <- 2.6
-LINE_MM <- 0.2
-POINT_MM <- 0.8
-MARGIN_MM <- 0
-
-plot_data_R <- format_combined_results(models_R) |>
-  pivot_longer(cols = -term, names_to = "quantile", values_to = "text") |>
-  mutate(side = "RHB")
-plot_data_L <- format_combined_results(models_L) |>
-  pivot_longer(cols = -term, names_to = "quantile", values_to = "text") |>
-  mutate(side = "LHB")
-
-plot_data_clean <- bind_rows(plot_data_R, plot_data_L) |>
-  filter(term %in% c("plate_x", "plate_z")) |>
-  mutate(
-    text = str_replace_all(text, "−", "-"),
-    coef = as.numeric(str_extract(text, "^[-0-9.]+")),
-    lower = as.numeric(str_extract(text, "(?<=\\[)[-0-9.]+")),
-    upper = as.numeric(str_extract(text, "(?<=,\\s)[-0-9.]+|(?<=,)[-0-9.]+")),
-    stars = str_extract(text, "(\\*\\*\\*|\\*\\*|\\*)"),
-    stars = ifelse(is.na(stars), "", stars),
-    quantile_num = as.numeric(str_remove(quantile, "%")) / 100,
-    term = case_when(term == "plate_x" ~ "a. Horizontal pitch location", term == "plate_z" ~ "b. Vertical pitch location", TRUE ~ term),
-    term = factor(term, levels = c("a. Horizontal pitch location", "b. Vertical pitch location"))
-  ) |>
-  group_by(term) |>
-  mutate(offset_val = (max(upper, na.rm = TRUE) - min(lower, na.rm = TRUE)) * 0.025) |>
-  group_by(term, quantile_num) |>
-  mutate(is_higher = coef == max(coef)) |>
-  ungroup() |>
-  mutate(y_star = ifelse(is_higher, upper + offset_val, lower - offset_val), v_just = ifelse(is_higher, 0, 1))
-
-theme_mm <- theme_classic() +
-  theme(
-    text = element_text(size = mm_text(TEXT_MM), family = family, colour = "black"),
-    axis.title = element_text(size = mm_text(TEXT_MM)),
-    axis.text = element_text(size = mm_text(TEXT_MM)),
-    plot.margin = margin(t = mm_line(MARGIN_MM), r = 0, b = mm_line(MARGIN_MM), l = 0, unit = "pt"),
-    legend.position = "none",
-    strip.background = element_blank(),
-    strip.text.x = element_text(angle = 0, hjust = 0, face = "bold", size = mm_text(TEXT_MM))
-  )
-
-g <- ggplot(plot_data_clean, aes(x = quantile_num, y = coef, color = side, fill = side)) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
-  geom_line(linewidth = mm_line(LINE_MM)) +
-  geom_point(aes(shape = side), size = mm_line(POINT_MM)) +
-  geom_text(aes(y = y_star, label = stars, vjust = v_just), color = "black", size = TEXT_MM, fontface = "bold", family = "ASE_FONT", show.legend = FALSE) +
-  geom_hline(yintercept = 0, color = "black", linewidth = mm_line(LINE_MM * 0.8), alpha = 0.6) +
-  facet_wrap(~term, ncol = 2) +
-  scale_x_continuous(breaks = c(0.10, 0.25, 0.50, 0.75, 0.90), labels = c(0.10, 0.25, 0.50, 0.75, 0.90)) +
-  scale_color_manual(values = c("RHB" = "#1f77b4", "LHB" = "#d62728"), name = "Batter handedness") +
-  scale_fill_manual(values = c("RHB" = "#1f77b4", "LHB" = "#d62728"), name = "Batter handedness") +
-  scale_shape_manual(values = c("RHB" = 16, "LHB" = 15), name = "Batter handedness") +
-  labs(x = "Quantiles", y = "Estimated coefficient") +scale_y_continuous(breaks = scales::breaks_width(10)) +
-  theme_classic() +
-  theme(
-    text = element_text(size = mm_text_theme(TEXT_MM), family = "ASE_FONT", colour = "black"),
-    plot.title = element_text(hjust = 0, face = "bold", size = mm_text_theme(TEXT_MM), family = "ASE_FONT", colour = "black"),
-    strip.background = element_blank(),
-    strip.text.x = element_text(angle = 0, hjust = 0, face = "bold", size = mm_text_theme(TEXT_MM), family = "ASE_FONT", colour = "black"),
-    axis.line = element_line(linewidth = mm_line(LINE_MM), colour = "black"),
-    axis.ticks = element_line(linewidth = mm_line(LINE_MM), colour = "black"),
-    panel.grid.major = element_line(color = "gray88", linewidth = mm_line(LINE_MM * 0.8)),
-    panel.grid.minor = element_blank(),
-    legend.position = "bottom",
-    legend.text = element_text(size = mm_text_theme(TEXT_MM), family = "ASE_FONT", colour = "black"),
-    legend.background = element_rect(colour = "black", fill = "white", linewidth = mm_line(LINE_MM * 0.2))
-  )
-
-print(g)
-
-ggsave("Fig4.tiff", plot = g, dpi = 300, width = 164, height = 80, units = "mm", 
-       bg = "white", limitsize = FALSE, compression = "lzw", device = "tiff")
-
 # figure 5 ##################
 
 grid_data <- expand.grid(
@@ -322,125 +221,3 @@ get_predictions <- function(model_list, grid_df) {
 
 plot_smooth_R <- get_predictions(model_list_R, grid_data)
 plot_smooth_L <- get_predictions(model_list_L, grid_data)
-
-zone_x <- (17 + 2.9) * 0.0254 / 3 / 2
-plot_smooth_R <- plot_smooth_R |>
-  mutate(
-    New_zone = case_when(
-      plate_x < -zone_x & plate_z >= 0.859 ~ 1L,
-      plate_x >= -zone_x & plate_x <= zone_x & plate_z >= 0.859 ~ 2L,
-      plate_x > zone_x & plate_z >= 0.859 ~ 3L,
-      plate_x < -zone_x & plate_z >= 0.673  & plate_z < 0.859 ~ 4L,
-      plate_x >= -zone_x & plate_x <= zone_x & plate_z >= 0.673  & plate_z < 0.859 ~ 5L,
-      plate_x > zone_x & plate_z >= 0.673  & plate_z < 0.859 ~ 6L,
-      plate_x < -zone_x & plate_z < 0.673  ~ 7L,
-      plate_x >= -zone_x & plate_x <= zone_x & plate_z < 0.673  ~ 8L,
-      plate_x > zone_x & plate_z < 0.673  ~ 9L,
-      TRUE ~ NA_integer_
-    )
-  ) |>
-  mutate(
-    New_zone = factor(New_zone, levels = 9:1)
-  )
-
-plot_smooth_R$tau <- factor(
-  plot_smooth_R$tau,
-  levels = c("tau_0.10","tau_0.25","tau_0.50","tau_0.75","tau_0.90"),
-  labels = c("0.10","0.25","0.50","0.75","0.90")
-)
-
-plot_smooth_L <- plot_smooth_L |>
-  mutate(
-    New_zone = case_when(
-      plate_x < -zone_x & plate_z >= 0.859 ~ 1L,
-      plate_x >= -zone_x & plate_x <= zone_x & plate_z >= 0.859 ~ 2L,
-      plate_x > zone_x & plate_z >= 0.859 ~ 3L,
-      plate_x < -zone_x & plate_z >= 0.673  & plate_z < 0.859 ~ 4L,
-      plate_x >= -zone_x & plate_x <= zone_x & plate_z >= 0.673  & plate_z < 0.859 ~ 5L,
-      plate_x > zone_x & plate_z >= 0.673  & plate_z < 0.859 ~ 6L,
-      plate_x < -zone_x & plate_z < 0.673  ~ 7L,
-      plate_x >= -zone_x & plate_x <= zone_x & plate_z < 0.673  ~ 8L,
-      plate_x > zone_x & plate_z < 0.673  ~ 9L,
-      TRUE ~ NA_integer_
-    )
-  ) |>
-  mutate(
-    New_zone = factor(New_zone, levels = 9:1)
-  )
-
-plot_smooth_L$tau <- factor(
-  plot_smooth_L$tau,
-  levels = c("tau_0.10","tau_0.25","tau_0.50","tau_0.75","tau_0.90"),
-  labels = c("0.10","0.25","0.50","0.75","0.90")
-)
-
-theme_mm <- theme_classic() +
-  theme(
-    text = element_text(
-      size   = mm_text_theme(TEXT_MM),
-      family = "ASE_FONT",
-      colour = "black"
-    ),
-    plot.title = element_text(hjust = 0, face="bold", size   = mm_text_theme(TEXT_MM), family = "ASE_FONT", colour = "black"), 
-    strip.background = element_blank(),
-    strip.text.x = element_text(angle = 0, hjust = 0, face="bold",  size   = mm_text_theme(TEXT_MM), family = "ASE_FONT", colour = "black"),
-  )
-
-g1 <- ggplot(
-  plot_smooth_R,
-  aes(x = pred_value, y = New_zone, fill = tau, shape = tau, group = New_zone)) +
-  geom_line(size = LINE_MM, alpha = 0.8) +
-  geom_errorbar(aes(xmin = lower, xmax = upper, color = tau),height = 0, linewidth = 2.2, alpha = 0.8) +    
-  geom_point(size = POINT_MM * 1.5, color = "white", stroke = 0.3) +
-  geom_point(size = POINT_MM * 1.3, col = "black", stroke = 0.2) +
-  scale_color_viridis_d(name = expression(tau), direction = -1) +
-  scale_fill_viridis_d(name = expression(tau), direction = -1) +
-  scale_shape_manual(name = expression(tau), values = c(21, 22, 23, 24, 25)) +
-  labs(shape = expression(tau)) +
-  theme_mm + xlab("Predicted spray angle [°]") + ylab("Pitch zones") +
-  theme(
-    legend.position = "right",
-    panel.grid.major.x = element_line(color = "gray90", linewidth = mm_line(LINE_MM * 0.5)),
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor = element_blank(),
-    legend.background = element_rect(colour = "black", fill = "white", linewidth = mm_line(LINE_MM * 0.1))
-  ) +
-  scale_x_reverse(limits = c(55, -55), breaks = seq(-45, 45, by = 15)) +
-  ggtitle("a. RHB")
-
-g2 <- ggplot(plot_smooth_L,
-             aes(x = pred_value,y = New_zone,fill = tau,shape = tau,group = New_zone))+ 
-  geom_line(size = LINE_MM, alpha = 0.8) +
-  geom_errorbar(aes(xmin = lower, xmax = upper, color = tau),height = 0, linewidth = 2.2, alpha = 0.8) +    
-  geom_point(size = POINT_MM * 1.5, color = "white", stroke = 0.3) +
-  geom_point(size = POINT_MM * 1.3, col = "black", stroke = 0.2) +
-  scale_color_viridis_d(name = expression(tau), direction = -1) +
-  scale_fill_viridis_d(name = expression(tau), direction = -1) +
-  scale_shape_manual(name = expression(tau), values = c(21, 22, 23, 24, 25)) +
-  labs(shape = expression(tau)) +
-  theme_mm + xlab("Predicted spray angle [°]") + ylab("Pitch zones") +
-  theme(
-    legend.position = "right",
-    panel.grid.major.x = element_line(
-      color = "gray90",
-      linewidth = mm_line(LINE_MM * 0.5)
-    ),
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor = element_blank(),
-    legend.background = element_rect(
-      colour = "black",
-      fill = "white",
-      linewidth = mm_line(LINE_MM*0.1)
-    )
-  ) +scale_x_reverse(limits = c(55, -55),breaks = seq(-45, 45, by = 15)) +  ggtitle("b. LHB")
-
-
-g3 <- (g1 | g2) +
-  plot_layout(guides = "collect") &
-  theme(legend.position = "bottom")
-
-g3
-
-ggsave(file = "Fig5.tiff", plot = g3, dpi = 300,
-       width = 174, height = 80, units = "mm",
-       bg = "white",limitsize = FALSE, compression = "lzw", device = "tiff")

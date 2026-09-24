@@ -9,7 +9,9 @@ library(here)
 
 # Load processed data
 load(here("data", "battedball.RData"))
+load(here("data", "positioning_data2023_2025.RData"))
 source(here("R", "load_functions.R"))
+
 
 battedball <- battedball |>
   mutate(dteam = ifelse(inning_topbot == "Top", home_team, away_team)) |>
@@ -19,7 +21,7 @@ battedball <- battedball |>
   ) |>
   filter(fielderposition %in% c("1B", "2B", "3B","SS" ,"CF", "LF", "RF"))
 
-hp_to_1b <- read_csv(here("data", "sprint_speed_2023_2025.csv")) |>
+hp_to_1b <- read_csv("sprint_speed_2023_2025.csv") |>
   select(player_id, team, hp_to_1b) |>
   rename(batter = player_id)
 
@@ -36,7 +38,7 @@ battedball <- battedball |>
 files <- c("arm_strength_2023.csv", "arm_strength_2024.csv", "arm_strength_2025.csv")
 
 arm_strength <- files |>
-  lapply(\(f) read_csv(here("data", f))) |>
+  lapply(read_csv) |>
   bind_rows() |>
   select(player_id, primary_position, primary_position_name, arm_overall) |>
   rename(fielder = player_id, position = primary_position) |>
@@ -47,7 +49,7 @@ arm_strength <- files |>
   mutate(arm_overall = arm_overall * 0.44704)
 
 league_position_mean <- files |>
-  lapply(\(f) read_csv(here("data", f))) |>
+  lapply(read_csv) |>
   bind_rows() |>
   select(player_id, primary_position, primary_position_name, arm_overall) |>
   rename(fielder = player_id, position = primary_position) |>
@@ -58,7 +60,7 @@ league_position_mean <- files |>
   select(fielder, position, arm_overall, source) |>
   mutate(arm_overall = arm_overall * 0.44704)
 
-arm_strength_all_year <- read_csv(here("data", "arm_strength_all.csv")) |>
+arm_strength_all_year <- read_csv("arm_strength_all.csv") |>
   select(player_id, primary_position, primary_position_name, arm_overall) |>
   rename(fielder = player_id, position = primary_position) |>
   group_by(fielder, position) |>
@@ -135,8 +137,6 @@ team_map <- c(
   "Blue Jays" = "TOR", "Nationals" = "WSH"
 )
 
-load(here("data", "positioning_data2023_2025.RData"))
-
 l <- positioning_data |>
   mutate(
     ave_distance = avg_norm_start_distance * 0.3048,
@@ -162,10 +162,14 @@ l <- positioning_data |>
     ave_distance, avg_angle, lx, ly
   )
 
+l  |> filter(position %in% c("3B", "SS", "2B", "1B")) |>
+  ungroup() |>
+  summarise(v1 = round(min(ave_distance)), v2 = round(max(ave_distance)),v3 = round(min(avg_angle)), v4 = round(max(avg_angle)))
+
 
 l_2025_league <- l |>
   filter(year == 2025) |>
-   group_by(dteam, position, stand, fielder_id) |>
+  group_by(dteam, position, stand, fielder_id) |>
   summarise(
     n_plays = n(),
     across(c(ave_distance, avg_angle, lx, ly), \(x) mean(x, na.rm = TRUE)),
@@ -188,6 +192,7 @@ l_2025_league <- l |>
     ),
     .groups = "drop"
   )
+
 save(l_2025_league, file = here("data", "l_2025_league.RData"))
 
 
