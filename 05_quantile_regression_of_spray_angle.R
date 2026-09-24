@@ -17,7 +17,7 @@ load(here("data", "battedball.RData"))
 source(here("R", "load_functions.R"))
 
 battedball <- battedball |>
-  filter(discate == "Infield (<60m)", !is.na(pfx_x), !is.na(launch_speed), !is.na(launch_angle),!is.na(sprayangle),!is.na(Distance), is.na(main_type) == F) 
+  filter(discate == "Infield (≤60m)", !is.na(pfx_x), !is.na(launch_speed), !is.na(launch_angle),!is.na(sprayangle),!is.na(Distance), is.na(main_type) == F) 
 
 battedball <- battedball |>
   select(batter, pitcher, platoon, p_throws, stand, main_type, plate_x,  plate_z, pfx_x, pfx_z, release_speed,
