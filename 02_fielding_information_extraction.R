@@ -160,7 +160,7 @@ subdata3 <- subdata2 |>
 battedball <- subdata3 |>
   filter(
     base_state_name == "Bases empty",
-    discate == "Infield (<60m)",
+    discate == "Infield (≤60m)",
     !is.na(pfx_x),
     !is.na(launch_speed),
     !is.na(launch_angle),
