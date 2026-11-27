@@ -101,7 +101,10 @@ repo-root/
 If you use this code, please cite the associated publication:
 
 ```
-[Add citation once the associated manuscript is published]
+Article Title: Optimizing infield defensive formations using pitch-location-specific distributions of batted ball kinematics in U.S. Major League Baseball
+Journal: Scientific Reports
+DOI: 10.1038/s41598-026-82975-9
+
 ```
 
 ## License
